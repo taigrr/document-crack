@@ -132,10 +132,10 @@ func TestFromBytes(t *testing.T) {
 			wantContent: string(expectedDocx),
 		},
 		{
-			name:     "ODT file",
-			data:     demoOdt,
-			wantType: TypeODT,
-			wantErr:  "failed to parse",
+			name:        "ODT file",
+			data:        demoOdt,
+			wantType:    TypeODT,
+			wantContent: "This is a word document.\n\nThis is a link.",
 		},
 		{
 			name:        "PPTX file",

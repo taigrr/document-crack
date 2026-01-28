@@ -39,8 +39,8 @@ type Document struct {
 // ErrUnknownFormat is returned when the file format cannot be determined.
 var ErrUnknownFormat = errors.New("unknown file format")
 
-// ErrNoContent is returned when no text content could be extracted.
-var ErrNoContent = errors.New("no text content found")
+// MaxDownloadSize is the maximum file size for URL downloads (100MB).
+const MaxDownloadSize = 100 << 20
 
 // FromFile extracts content from a file at the given path.
 func FromFile(path string) (Document, error) {
@@ -94,9 +94,14 @@ func FromURL(ctx context.Context, fileURL string) (Document, error) {
 		return Document{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	data, err := io.ReadAll(resp.Body)
+	// Limit download size to prevent OOM
+	limitedReader := io.LimitReader(resp.Body, MaxDownloadSize+1)
+	data, err := io.ReadAll(limitedReader)
 	if err != nil {
 		return Document{}, fmt.Errorf("failed to read response: %w", err)
+	}
+	if len(data) > MaxDownloadSize {
+		return Document{}, fmt.Errorf("file too large (max %d bytes)", MaxDownloadSize)
 	}
 
 	return FromBytes(data)

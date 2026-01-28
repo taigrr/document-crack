@@ -17,14 +17,14 @@ type ODT struct {
 	Size   int64
 }
 
-type metaProperties struct {
-	XMLName xml.Name `xml:"http://openxmlformats.org/officeDocument/2006/metadata/core-properties core-properties"`
-	Title   string   `xml:"dc:title"`
+// ODT uses ODF meta format, title can be in different locations
+type officeMeta struct {
+	XMLName xml.Name `xml:"document-meta"`
+	Meta    metaInfo `xml:"meta"`
 }
 
-type textNode struct {
-	XMLName xml.Name `xml:"text:p"`
-	Content string   `xml:",chardata"`
+type metaInfo struct {
+	Title string `xml:"title"`
 }
 
 // New creates a new ODT extractor.
@@ -35,35 +35,25 @@ func New(r io.ReaderAt, size int64) *ODT {
 	}
 }
 
-func (d *ODT) getTitle() error {
-	r, err := zip.NewReader(d.Reader, d.Size)
-	if err != nil {
-		return fmt.Errorf("failed to open .odt from ReaderAt: %w", err)
-	}
-
-	for _, file := range r.File {
-		if strings.HasSuffix(file.Name, "meta.xml") {
+func (d *ODT) getTitle(zr *zip.Reader) {
+	for _, file := range zr.File {
+		if file.Name == "meta.xml" {
 			rc, err := file.Open()
 			if err != nil {
-				return fmt.Errorf("failed to open meta.xml: %w", err)
+				return // Title is optional, don't fail
 			}
 			defer rc.Close()
 
-			var props metaProperties
+			var meta officeMeta
 			decoder := xml.NewDecoder(rc)
-			if err := decoder.Decode(&props); err != nil {
-				if err == io.EOF {
-					continue
-				}
-				return fmt.Errorf("failed to parse XML: %w", err)
+			if err := decoder.Decode(&meta); err != nil {
+				return // Title is optional, don't fail
 			}
 
-			d.Title = props.Title
-			return nil
+			d.Title = meta.Meta.Title
+			return
 		}
 	}
-
-	return fmt.Errorf("meta.xml file not found")
 }
 
 // Load extracts text content from the ODT.
@@ -72,12 +62,10 @@ func (d *ODT) Load() error {
 	if err != nil {
 		return fmt.Errorf("failed to open .odt from ReaderAt: %w", err)
 	}
-	if err := d.getTitle(); err != nil {
-		return err
-	}
+	d.getTitle(r) // Title is optional, don't fail if missing
 
 	for _, file := range r.File {
-		if strings.HasSuffix(file.Name, "content.xml") {
+		if file.Name == "content.xml" {
 			rc, err := file.Open()
 			if err != nil {
 				return fmt.Errorf("failed to open content.xml: %w", err)
@@ -86,16 +74,30 @@ func (d *ODT) Load() error {
 
 			content := strings.Builder{}
 			decoder := xml.NewDecoder(rc)
+
+			// Use token-based parsing to find all text content
 			for {
-				var node textNode
-				if err := decoder.Decode(&node); err != nil {
+				tok, err := decoder.Token()
+				if err != nil {
 					if err == io.EOF {
 						break
 					}
 					return fmt.Errorf("failed to parse XML: %w", err)
 				}
-				content.WriteString(node.Content + "\n")
+
+				switch t := tok.(type) {
+				case xml.StartElement:
+					// Add newline for paragraph elements
+					if t.Name.Local == "p" && t.Name.Space == "urn:oasis:names:tc:opendocument:xmlns:text:1.0" {
+						if content.Len() > 0 {
+							content.WriteString("\n")
+						}
+					}
+				case xml.CharData:
+					content.Write(t)
+				}
 			}
+
 			d.Text = strings.TrimSpace(content.String())
 			if d.Text == "" {
 				return fmt.Errorf("no text found in content.xml")

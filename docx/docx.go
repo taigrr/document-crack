@@ -32,34 +32,30 @@ func New(r io.ReaderAt, size int64) *Docx {
 	}
 }
 
-func (d *Docx) getTitle() error {
+func (d *Docx) getTitle() {
 	r, err := zip.NewReader(d.Reader, d.Size)
 	if err != nil {
-		return fmt.Errorf("failed to open .docx file: %w", err)
+		return // Title is optional, don't fail
 	}
 
 	for _, file := range r.File {
 		if strings.HasSuffix(file.Name, "docProps/core.xml") {
 			rc, err := file.Open()
 			if err != nil {
-				return fmt.Errorf("failed to open core.xml: %w", err)
+				return // Title is optional, don't fail
 			}
 			defer rc.Close()
 
 			var props coreProperties
 			decoder := xml.NewDecoder(rc)
 			if err := decoder.Decode(&props); err != nil {
-				if err == io.EOF {
-					continue
-				}
-				return fmt.Errorf("failed to parse XML: %w", err)
+				return // Title is optional, don't fail
 			}
 
 			d.Title = props.Title
-			return nil
+			return
 		}
 	}
-	return fmt.Errorf("core.xml file not found")
 }
 
 // Load extracts text content from the DOCX.
@@ -75,5 +71,6 @@ func (d *Docx) Load() error {
 	if d.Text == "" {
 		return fmt.Errorf("no content found")
 	}
-	return d.getTitle()
+	d.getTitle() // Title is optional, don't fail if missing
+	return nil
 }

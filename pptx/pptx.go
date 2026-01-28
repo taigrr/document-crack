@@ -58,6 +58,9 @@ func (p *PPTX) Load() error {
 	var textBody string
 	for _, override := range contentTypeDef.Overrides {
 		f := zipFiles[override.PartName]
+		if f == nil {
+			continue // Skip missing files
+		}
 		switch override.ContentType {
 		case "application/vnd.openxmlformats-officedocument.presentationml.slide+xml",
 			"application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml":
@@ -113,7 +116,7 @@ func mapZipFiles(files []*zip.File) map[string]*zip.File {
 }
 
 func xmlToText(r io.Reader, breaks []string, skip []string, strict bool) (string, error) {
-	var result string
+	var result strings.Builder
 	dec := xml.NewDecoder(io.LimitReader(r, maxSize))
 	dec.Strict = strict
 	for {
@@ -126,11 +129,11 @@ func xmlToText(r io.Reader, breaks []string, skip []string, strict bool) (string
 		}
 		switch v := t.(type) {
 		case xml.CharData:
-			result += string(v)
+			result.Write(v)
 		case xml.StartElement:
 			for _, breakElement := range breaks {
 				if v.Name.Local == breakElement {
-					result += "\n"
+					result.WriteString("\n")
 				}
 			}
 			for _, skipElement := range skip {
@@ -155,5 +158,5 @@ func xmlToText(r io.Reader, breaks []string, skip []string, strict bool) (string
 			}
 		}
 	}
-	return result, nil
+	return result.String(), nil
 }
