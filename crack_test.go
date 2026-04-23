@@ -196,7 +196,7 @@ func TestFromURL(t *testing.T) {
 		url         string
 		wantType    FileType
 		wantContent string
-		wantErr     bool
+		wantErr     string
 	}{
 		{
 			name:        "DOC file",
@@ -231,16 +231,29 @@ func TestFromURL(t *testing.T) {
 		{
 			name:    "Invalid URL",
 			url:     "invalid://url",
-			wantErr: true,
+			wantErr: "failed to download file",
+		},
+		{
+			name:    "Non-200 response",
+			url:     "http://localhost/not-found.pdf",
+			wantErr: "unexpected status code: 404",
+		},
+		{
+			name:    "Oversized response by content length",
+			url:     "http://localhost/too-large.pdf",
+			wantErr: "file too large",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			doc, err := FromURL(context.Background(), tt.url)
-			if tt.wantErr {
+			if tt.wantErr != "" {
 				if err == nil {
-					t.Error("expected error, got nil")
+					t.Fatalf("expected error containing %q, got nil", tt.wantErr)
+				}
+				if !strings.Contains(err.Error(), tt.wantErr) {
+					t.Fatalf("expected error containing %q, got %v", tt.wantErr, err)
 				}
 				return
 			}
@@ -301,6 +314,17 @@ func (m *mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: 200,
 			Body:       io.NopCloser(bytes.NewReader(demoTxt)),
+		}, nil
+	case "http://localhost/not-found.pdf":
+		return &http.Response{
+			StatusCode: http.StatusNotFound,
+			Body:       io.NopCloser(strings.NewReader("not found")),
+		}, nil
+	case "http://localhost/too-large.pdf":
+		return &http.Response{
+			StatusCode:    200,
+			ContentLength: MaxDownloadSize + 1,
+			Body:          io.NopCloser(strings.NewReader("should not be read")),
 		}, nil
 	}
 	return nil, errors.New("mock transport error")
