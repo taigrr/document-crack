@@ -93,6 +93,9 @@ func FromURL(ctx context.Context, fileURL string) (Document, error) {
 	if resp.StatusCode != http.StatusOK {
 		return Document{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
+	if resp.ContentLength > MaxDownloadSize {
+		return Document{}, fmt.Errorf("file too large (max %d bytes)", MaxDownloadSize)
+	}
 
 	// Limit download size to prevent OOM
 	limitedReader := io.LimitReader(resp.Body, MaxDownloadSize+1)
