@@ -42,20 +42,20 @@ func New(r io.ReaderAt, size int64) *PPTX {
 func (p *PPTX) Load() error {
 	zr, err := zip.NewReader(p.Reader, p.Size)
 	if err != nil {
-		return fmt.Errorf("could not unzip: %v", err)
+		return fmt.Errorf("could not unzip: %w", err)
 	}
 
 	zipFiles := mapZipFiles(zr.File)
 	zipFile := zipFiles["[Content_Types].xml"]
 	if zipFile == nil {
-		return fmt.Errorf("zipFile type definition not found")
+		return fmt.Errorf("zip file type definition not found")
 	}
 	contentTypeDef, err := getContentTypeDefinition(zipFile)
 	if err != nil {
 		return err
 	}
 
-	var textBody string
+	var textBody strings.Builder
 	for _, override := range contentTypeDef.Overrides {
 		f := zipFiles[override.PartName]
 		if f == nil {
@@ -66,14 +66,15 @@ func (p *PPTX) Load() error {
 			"application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml":
 			body, err := parseSlideText(f)
 			if err != nil {
-				return fmt.Errorf("could not parse pptx: %v", err)
+				return fmt.Errorf("could not parse pptx: %w", err)
 			}
-			textBody += body + "\n"
+			textBody.WriteString(body)
+			textBody.WriteString("\n")
 		}
 	}
-	p.Text = strings.TrimSpace(textBody)
+	p.Text = strings.TrimSpace(textBody.String())
 	if p.Text == "" {
-		return fmt.Errorf("pptx is empty")
+		return fmt.Errorf("no text content found in pptx")
 	}
 	return nil
 }
@@ -95,13 +96,13 @@ func getContentTypeDefinition(zf *zip.File) (*contentTypeDefinition, error) {
 func parseSlideText(f *zip.File) (string, error) {
 	r, err := f.Open()
 	if err != nil {
-		return "", fmt.Errorf("error opening '%v' from archive: %v", f.Name, err)
+		return "", fmt.Errorf("error opening %q from archive: %w", f.Name, err)
 	}
 	defer r.Close()
 
 	text, err := xmlToText(r, []string{"br", "p", "tab"}, []string{"instrText", "script"}, true)
 	if err != nil {
-		return "", fmt.Errorf("error parsing '%v': %v", f.Name, err)
+		return "", fmt.Errorf("error parsing %q: %w", f.Name, err)
 	}
 	return text, nil
 }

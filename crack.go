@@ -10,11 +10,11 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/taigrr/document-crack/doc"
-	"github.com/taigrr/document-crack/docx"
-	"github.com/taigrr/document-crack/odt"
-	"github.com/taigrr/document-crack/pdf"
-	"github.com/taigrr/document-crack/pptx"
+	"github.com/taigrr/document-crack/v2/doc"
+	"github.com/taigrr/document-crack/v2/docx"
+	"github.com/taigrr/document-crack/v2/odt"
+	"github.com/taigrr/document-crack/v2/pdf"
+	"github.com/taigrr/document-crack/v2/pptx"
 )
 
 // FileType represents the detected document format.
@@ -27,6 +27,10 @@ const (
 	TypeODT  FileType = "ODT"
 	TypePPTX FileType = "PPTX"
 	TypeTXT  FileType = "TXT"
+
+	// typeZIP is an internal sentinel used during detection for PK-prefixed
+	// files (DOCX, ODT, PPTX all share the ZIP magic bytes).
+	typeZIP FileType = "ZIP"
 )
 
 // Document represents the extracted content from a file.
@@ -127,7 +131,7 @@ func detectFileType(r io.Reader) (FileType, error) {
 	case bytes.HasPrefix(buf, []byte{0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1}): // DOC
 		return TypeDOC, nil
 	case bytes.HasPrefix(buf, []byte{0x50, 0x4B}): // PK (ZIP-based: DOCX, ODT, PPTX)
-		return TypeDOCX, nil // Will fallthrough to ODT/PPTX if DOCX parsing fails
+		return typeZIP, nil
 	default:
 		return TypeTXT, nil
 	}
@@ -140,7 +144,7 @@ func crack(r io.ReaderAt, size int64, fileType FileType) (Document, error) {
 		return crackPDF(r, size)
 	case TypeDOC:
 		return crackDOC(r, size)
-	case TypeDOCX:
+	case typeZIP:
 		// DOCX, ODT, and PPTX all start with PK (ZIP)
 		// Try DOCX first, fall through to PPTX, then ODT
 		doc, err := crackDOCX(r, size)

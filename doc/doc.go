@@ -4,7 +4,7 @@ package doc
 import (
 	"io"
 
-	doc "github.com/EndFirstCorp/doc2txt"
+	doc "github.com/taigrr/doc2txt"
 )
 
 // Doc represents a legacy DOC document for text extraction.
@@ -12,7 +12,6 @@ type Doc struct {
 	Reader io.Reader
 	Text   string
 	Title  string
-	Size   int64
 }
 
 // New creates a new DOC extractor.

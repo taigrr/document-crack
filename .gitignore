@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+/crack
 
 # Test binary
 *.test

@@ -69,7 +69,7 @@ func (d *Docx) Load() error {
 	editable := r.Editable()
 	d.Text = editable.GetContent()
 	if d.Text == "" {
-		return fmt.Errorf("no content found")
+		return fmt.Errorf("no text content found in docx")
 	}
 	d.getTitle() // Title is optional, don't fail if missing
 	return nil

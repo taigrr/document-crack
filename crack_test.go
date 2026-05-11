@@ -57,17 +57,17 @@ func TestDetectFileType(t *testing.T) {
 		{
 			name:    "DOCX file",
 			content: demoDocx,
-			want:    TypeDOCX,
+			want:    typeZIP,
 		},
 		{
 			name:    "ODT file",
 			content: demoOdt,
-			want:    TypeDOCX, // ODT starts with PK like DOCX
+			want:    typeZIP, // ODT starts with PK like DOCX
 		},
 		{
 			name:    "PPTX file",
 			content: demoPptx,
-			want:    TypeDOCX, // PPTX starts with PK like DOCX
+			want:    typeZIP, // PPTX starts with PK like DOCX
 		},
 		{
 			name:    "Text file",

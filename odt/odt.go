@@ -106,5 +106,5 @@ func (d *ODT) Load() error {
 		}
 	}
 
-	return fmt.Errorf("content.xml file not found")
+	return fmt.Errorf("content.xml not found in archive")
 }
