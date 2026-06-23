@@ -14,7 +14,8 @@ A Go library for extracting text content from various document formats.
 ## Installation
 
 ```bash
-go get github.com/taigrr/document-crack
+go get github.com/taigrr/document-crack/v2
+go install github.com/taigrr/document-crack/v2/cmd/crack@latest
 ```
 
 ## Usage
@@ -28,7 +29,7 @@ import (
     "fmt"
     "log"
 
-    crack "github.com/taigrr/document-crack"
+    crack "github.com/taigrr/document-crack/v2"
 )
 
 func main() {
@@ -68,6 +69,12 @@ doc, err := crack.FromURL(ctx, "https://example.com/document.pdf")
 if err != nil {
     log.Fatal(err)
 }
+```
+
+### Command line
+
+```bash
+crack /path/to/document.pdf
 ```
 
 ## Document Structure
