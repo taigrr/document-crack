@@ -217,6 +217,12 @@ func TestFromURL(t *testing.T) {
 			wantContent: "This is a pptx document.\n\nThis is a link.",
 		},
 		{
+			name:        "ODT file",
+			url:         "http://localhost/test.odt",
+			wantType:    TypeODT,
+			wantContent: "This is a word document.\n\nThis is a link.",
+		},
+		{
 			name:        "PDF file",
 			url:         "http://localhost/test.pdf",
 			wantType:    TypePDF,
@@ -274,11 +280,26 @@ func TestFromURL(t *testing.T) {
 }
 
 func TestFromFile(t *testing.T) {
-	// Test with non-existent file
-	_, err := FromFile("/nonexistent/file.pdf")
-	if err == nil {
-		t.Error("expected error for non-existent file")
-	}
+	t.Run("existing file", func(t *testing.T) {
+		doc, err := FromFile("testdata/demo.txt")
+		if err != nil {
+			t.Fatalf("FromFile: %v", err)
+		}
+		if doc.Type != TypeTXT {
+			t.Fatalf("expected type %s, got %s", TypeTXT, doc.Type)
+		}
+		content := strings.Join(doc.Content, "\n")
+		if !strings.Contains(content, "Sample txt file") {
+			t.Fatalf("expected sample text, got %q", content)
+		}
+	})
+
+	t.Run("missing file", func(t *testing.T) {
+		_, err := FromFile("/nonexistent/file.pdf")
+		if err == nil {
+			t.Fatal("expected error for non-existent file")
+		}
+	})
 }
 
 type mockTransport struct{}
