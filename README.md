@@ -1,6 +1,9 @@
 # document-crack
 
-A Go library for extracting text content from various document formats.
+[![CI](https://github.com/taigrr/document-crack/actions/workflows/ci.yml/badge.svg)](https://github.com/taigrr/document-crack/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/taigrr/document-crack/v2.svg)](https://pkg.go.dev/github.com/taigrr/document-crack/v2)
+
+A Go library and CLI for extracting text content from PDF, DOCX, DOC, PPTX, ODT, and TXT documents.
 
 ## Supported Formats
 

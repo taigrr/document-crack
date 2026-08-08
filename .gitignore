@@ -15,6 +15,9 @@
 # Dependency directories
 vendor/
 
+# GoReleaser
+/dist/
+
 # IDE
 .idea/
 .vscode/
