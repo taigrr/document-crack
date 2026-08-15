@@ -6,7 +6,7 @@ require (
 	charm.land/fang/v2 v2.0.1
 	github.com/ledongthuc/pdf v0.0.0-20250511090121-5959a4027728
 	github.com/nguyenthenguyen/docx v0.0.0-20230621112118-9c8e795a11db
-	github.com/pdfcpu/pdfcpu v0.14.0
+	github.com/pdfcpu/pdfcpu v0.15.0
 	github.com/spf13/cobra v1.10.2
 	github.com/taigrr/doc2txt v0.1.0
 )
