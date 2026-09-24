@@ -249,6 +249,11 @@ func TestFromURL(t *testing.T) {
 			url:     "http://localhost/too-large.pdf",
 			wantErr: "file too large",
 		},
+		{
+			name:    "Oversized response by body limit",
+			url:     "http://localhost/too-large-stream.pdf",
+			wantErr: "file too large",
+		},
 	}
 
 	for _, tt := range tests {
@@ -347,6 +352,30 @@ func (m *mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 			ContentLength: MaxDownloadSize + 1,
 			Body:          io.NopCloser(strings.NewReader("should not be read")),
 		}, nil
+	case "http://localhost/too-large-stream.pdf":
+		return &http.Response{
+			StatusCode:    200,
+			ContentLength: -1,
+			Body:          io.NopCloser(&oversizeReader{remaining: MaxDownloadSize + 1}),
+		}, nil
 	}
 	return nil, errors.New("mock transport error")
+}
+
+type oversizeReader struct {
+	remaining int
+}
+
+func (r *oversizeReader) Read(p []byte) (int, error) {
+	if r.remaining == 0 {
+		return 0, io.EOF
+	}
+	if len(p) > r.remaining {
+		p = p[:r.remaining]
+	}
+	for i := range p {
+		p[i] = 'x'
+	}
+	r.remaining -= len(p)
+	return len(p), nil
 }
