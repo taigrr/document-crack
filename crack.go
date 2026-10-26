@@ -59,7 +59,24 @@ func FromFile(path string) (Document, error) {
 		return Document{}, fmt.Errorf("failed to stat file: %w", err)
 	}
 
-	return FromReader(f, info.Size())
+	return fromFile(f, info.Size(), path)
+}
+
+// fromFile is like FromReader but keeps the file path so the PDF
+// extractor can hand it straight to pdftotext without a temp copy.
+func fromFile(r io.ReaderAt, size int64, path string) (Document, error) {
+	sr := io.NewSectionReader(r, 0, size)
+
+	fileType, err := detectFileType(sr)
+	if err != nil {
+		return Document{}, err
+	}
+
+	if fileType == TypePDF {
+		return crackPDFWithPath(r, size, path)
+	}
+
+	return crack(r, size, fileType)
 }
 
 // FromBytes extracts content from a byte slice.
@@ -164,7 +181,12 @@ func crack(r io.ReaderAt, size int64, fileType FileType) (Document, error) {
 }
 
 func crackPDF(r io.ReaderAt, size int64) (Document, error) {
+	return crackPDFWithPath(r, size, "")
+}
+
+func crackPDFWithPath(r io.ReaderAt, size int64, path string) (Document, error) {
 	p := pdf.New(r, size)
+	p.FilePath = path
 
 	// Need a ReadSeeker for title extraction
 	sr := io.NewSectionReader(r, 0, size)
