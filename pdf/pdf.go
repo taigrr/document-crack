@@ -2,6 +2,7 @@
 package pdf
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"strings"
@@ -28,7 +29,7 @@ func New(r io.ReaderAt, size int64) *PDF {
 }
 
 func (p *PDF) getTitle(rs io.ReadSeeker) error {
-	info, err := pdfcpu.PDFInfo(rs, "", []string{}, false, model.NewDefaultConfiguration())
+	info, err := pdfcpu.PDFInfo(context.Background(), rs, "", []string{}, false, model.NewDefaultConfiguration())
 	if err != nil {
 		// Title extraction is optional, don't fail if we can't get it
 		return nil
