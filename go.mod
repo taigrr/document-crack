@@ -2,6 +2,8 @@ module github.com/taigrr/document-crack/v2
 
 go 1.27.1
 
+toolchain go1.27.3
+
 require (
 	charm.land/fang/v2 v2.0.1
 	github.com/ledongthuc/pdf v0.0.0-20250511090121-5959a4027728
