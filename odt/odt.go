@@ -42,7 +42,8 @@ func (d *ODT) getTitle(zr *zip.Reader) {
 			if err != nil {
 				return // Title is optional, don't fail
 			}
-			defer rc.Close()
+			// Read-only cleanup must not replace the extraction result.
+			defer func() { _ = rc.Close() }()
 
 			var meta officeMeta
 			decoder := xml.NewDecoder(rc)
@@ -70,7 +71,8 @@ func (d *ODT) Load() error {
 			if err != nil {
 				return fmt.Errorf("failed to open content.xml: %w", err)
 			}
-			defer rc.Close()
+			// Read-only cleanup must not replace the extraction result.
+			defer func() { _ = rc.Close() }()
 
 			content := strings.Builder{}
 			decoder := xml.NewDecoder(rc)
