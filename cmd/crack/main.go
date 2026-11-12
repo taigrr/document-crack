@@ -36,10 +36,14 @@ func runCrack(cmd *cobra.Command, args []string) error {
 	}
 
 	if doc.Title != "" {
-		fmt.Fprintf(cmd.OutOrStdout(), "# %s\n\n", doc.Title)
+		if _, err := fmt.Fprintf(cmd.OutOrStdout(), "# %s\n\n", doc.Title); err != nil {
+			return fmt.Errorf("failed to write title: %w", err)
+		}
 	}
 
-	fmt.Fprintln(cmd.OutOrStdout(), strings.Join(doc.Content, "\n"))
+	if _, err := fmt.Fprintln(cmd.OutOrStdout(), strings.Join(doc.Content, "\n")); err != nil {
+		return fmt.Errorf("failed to write content: %w", err)
+	}
 
 	return nil
 }

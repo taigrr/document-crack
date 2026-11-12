@@ -44,7 +44,8 @@ func (d *Docx) getTitle() {
 			if err != nil {
 				return // Title is optional, don't fail
 			}
-			defer rc.Close()
+			// Read-only cleanup must not replace the extraction result.
+			defer func() { _ = rc.Close() }()
 
 			var props coreProperties
 			decoder := xml.NewDecoder(rc)
@@ -64,7 +65,8 @@ func (d *Docx) Load() error {
 	if err != nil {
 		return err
 	}
-	defer r.Close()
+	// Read-only cleanup must not replace the extraction result.
+	defer func() { _ = r.Close() }()
 
 	editable := r.Editable()
 	d.Text = editable.GetContent()

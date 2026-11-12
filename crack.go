@@ -52,7 +52,8 @@ func FromFile(path string) (Document, error) {
 	if err != nil {
 		return Document{}, fmt.Errorf("failed to open file: %w", err)
 	}
-	defer f.Close()
+	// Read-only cleanup must not replace the extraction result.
+	defer func() { _ = f.Close() }()
 
 	info, err := f.Stat()
 	if err != nil {
@@ -92,7 +93,8 @@ func FromURL(ctx context.Context, fileURL string) (Document, error) {
 	if err != nil {
 		return Document{}, fmt.Errorf("failed to download file: %w", err)
 	}
-	defer resp.Body.Close()
+	// Read-only response cleanup must not replace the extraction result.
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return Document{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)

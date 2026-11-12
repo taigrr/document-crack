@@ -84,7 +84,8 @@ func getContentTypeDefinition(zf *zip.File) (*contentTypeDefinition, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	// Read-only cleanup must not replace the extraction result.
+	defer func() { _ = f.Close() }()
 
 	x := &contentTypeDefinition{}
 	if err := xml.NewDecoder(io.LimitReader(f, maxSize)).Decode(x); err != nil {
@@ -98,7 +99,8 @@ func parseSlideText(f *zip.File) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error opening %q from archive: %w", f.Name, err)
 	}
-	defer r.Close()
+	// Read-only cleanup must not replace the extraction result.
+	defer func() { _ = r.Close() }()
 
 	text, err := xmlToText(r, []string{"br", "p", "tab"}, []string{"instrText", "script"}, true)
 	if err != nil {
